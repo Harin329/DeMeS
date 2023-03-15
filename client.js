@@ -175,7 +175,7 @@ function tallyVotes(votes, sender) {
         // All votes have been tallied, find the elected leader
         leader = Object.keys(pseudoLeaderTally).sort((a, b) => pseudoLeaderTally[b] - pseudoLeaderTally[a])[0];
         console.log(`Leader has been elected: ${leader}`);
-        chatStarted = true;
         sendMessage(`${CHAT_STARTED}-${leader}`, audience);
+        chatStarted = true;
     }
 }
