@@ -1,4 +1,10 @@
+import { debug } from 'node:console';
 import { createServer, createConnection } from 'node:net';
+
+
+// USE FUNCTION `print(string)` TO DEBUG
+const PRINT_DEBUG = true;
+
 
 // Action Constants (Can Factor Out Later)
 const CREATE_CHAT = "CREATE_CHAT";
@@ -8,6 +14,17 @@ const REQUEST_PING = "REQUEST_PING";
 const REPLY_PING = "REPLY_PING";
 const RETURN_VOTES = "RETURN_VOTES";
 const CHAT_STARTED = "CHAT_STARTED";
+const MESSAGE_ACK = "MESSAGE_ACK";
+
+
+// Used for sequence numbers
+let SEQUENCE_STRING_START = "@#!$&(*#!$[";
+let SEQUENCE_STRING_END = "]@#!$&(*#!$";
+
+let messageSeqNum = 0
+let waitingForMessageSeqNum = -1
+
+let lastMessageFromSender = {}
 
 // Leadership Selection Temp Variables
 const PING_CHECKS = 3;
@@ -25,6 +42,8 @@ const myPort = args[0];
 let audience = [];
 let leader = args[1];
 let chatStarted = false;
+
+
 
 if (myPort === args[1]) {
     // Initialize group chat as the first member, becomes psuedo-leader
@@ -57,7 +76,7 @@ const server = createServer((socket) => {
             console.log(`Checking Latency of Participants...${participants.join(',')}`);
             checkLatency(participants);
         } else if (message.startsWith(RETURN_VOTES)) {
-            console.log("Return Votes Recieved");
+            console.log("Return Votes Received");
             const votes = message.substring(message.indexOf('-') + 1).split(',');
             tallyVotes(votes, sender);
         } else if (message.startsWith(CHAT_STARTED)) {
@@ -68,15 +87,29 @@ const server = createServer((socket) => {
                 audience.filter((port) => port !== myPort);
             }
             console.log(`Chat has started with leader ${leader}! Message away!`);
+        } else if(message.startsWith(MESSAGE_ACK)) {
+            handleACK(message);
+
         } else {
-            console.log(`Incoming Message from ${sender}: ${message}`);
+            let messageText = getMessageFromTextWithSequenceNum(message)
+
+            if (leader === myPort && sender !== leader) {
+                handleAckRequest(message, sender)
+            }
+
+            console.log(`Incoming Message from ${sender}: ${messageText}`);
         }
     });
 });
 
 // Start Server
 server.listen(myPort, () => {
+    if (myPort == undefined) {
+        console.log(`Error: No port number. Please enter a port number as the first argument.`)
+        process.exit(0)
+    }
     console.log(`Server listening on port ${myPort}`);
+
     if (leader === myPort) {
         console.log(`Other users can use this port to join the chat, type CREATE_CHAT to begin chatting!`);
     }
@@ -94,23 +127,34 @@ process.stdin.on('data', (text) => {
             participants = audience.concat([myPort]);
             checkLatency(participants);
         } else if (chatStarted) {
-            sendMessage(text, audience);
+            sendMessage(addSequenceNumToMessage(text, messageSeqNum), audience, [leader]);
+            messageSeqNum++
         } else {
             console.log("Chat has not been started yet! Type CREATE_CHAT to begin chatting!")
         }
     } else {
         // Text Input Logic for Non-Leader
-        sendMessage(text, audience);
+        if (messageSeqNum == waitingForMessageSeqNum) {
+            console.log("Waiting for previous message to be ACKed by leader")
+        } else {
+            waitingForMessageSeqNum = messageSeqNum;
+            sendMessage(addSequenceNumToMessage(text, messageSeqNum), [leader]);
+        }
+
     }
 });
 
-function sendMessage(message, audience) {
+function sendMessage(message, audience, except) {
+    if (except === undefined) {
+        except = []
+    }
     let sendTo = audience;
     if (chatStarted && leader !== myPort) {
         sendTo = [leader];
     }
-
+    
     for (const address of sendTo) {
+        if (except.indexOf(address) !== -1) continue;
         const client = createConnection({ port: address }, () => {
             client.write(`${myPort}-${message}`);
             client.end();
@@ -178,4 +222,67 @@ function tallyVotes(votes, sender) {
         sendMessage(`${CHAT_STARTED}-${leader}`, audience);
         chatStarted = true;
     }
+}
+
+function handleACK(message) {
+    let s = message.indexOf(MESSAGE_ACK) + (MESSAGE_ACK.length)
+
+    let ackForSeqNum = Number(message.substring(s,message.length))
+
+    if (waitingForMessageSeqNum == ackForSeqNum && waitingForMessageSeqNum == messageSeqNum) {
+        messageSeqNum++;
+    }
+}
+
+function addSequenceNumToMessage(message, n) {
+
+    message = SEQUENCE_STRING_START+n+SEQUENCE_STRING_END+message
+    return message 
+
+}
+
+function getSequenceNumFromMessage(message) {
+    if (message.indexOf(SEQUENCE_STRING_START) == -1) {
+        return -1
+    }
+    let s = message.indexOf(SEQUENCE_STRING_START) + (SEQUENCE_STRING_START.length)
+    let e = message.indexOf(SEQUENCE_STRING_END)
+
+    return Number(message.substring(s,e))
+}
+
+
+function getMessageFromTextWithSequenceNum(message) {
+    if (message.indexOf(SEQUENCE_STRING_END) == -1) {
+        return message
+    }
+    let s = message.indexOf(SEQUENCE_STRING_END) + SEQUENCE_STRING_END.length
+    return message.substring(s,message.length).replace(/(\r\n|\n|\r)/gm, "")
+}
+
+function handleAckRequest(message, sender) {
+    let messageText = getMessageFromTextWithSequenceNum(message)
+    let seqNum = getSequenceNumFromMessage(message)
+
+    if (lastMessageFromSender[sender] !== undefined && lastMessageFromSender[sender] >= seqNum) {
+        //Don't broadcast already broadcasted messages
+        print(`Already ACKed, sending again to  ${sender}`);
+        sendMessage(MESSAGE_ACK + seqNum, [sender])
+    } else {
+        print(`ACK for message sent to  ${sender}`);
+        sendMessage(MESSAGE_ACK + seqNum, [sender])
+
+
+        print(`Broadcasting ${messageText} to all servers`)
+        sendMessage(messageText, audience, [sender, leader])
+
+        lastMessageFromSender[sender] = seqNum
+    }
+
+}
+
+
+function print(s) {
+    if (!PRINT_DEBUG) return;
+    console.log('\x1b[36m%s\x1b[0m', s);
 }
