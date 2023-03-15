@@ -4,4 +4,4 @@ DeMes is a decentralized messaging service with leadership selection to allow us
 
 ## Installation
 1. Install [Node.js](https://nodejs.org/en/download/)
-2. Run `node client.js <MyPort> <Host>`
+2. Run `node client.js <MyPort> <PsuedoLeader>`
