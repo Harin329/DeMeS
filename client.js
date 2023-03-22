@@ -15,6 +15,7 @@ const REPLY_PING = "REPLY_PING";
 const RETURN_VOTES = "RETURN_VOTES";
 const CHAT_STARTED = "CHAT_STARTED";
 const MESSAGE_ACK = "MESSAGE_ACK";
+const LEADER_PING = "LEADER_PING";
 
 
 // Used for sequence numbers
@@ -34,6 +35,12 @@ let pingEndTime = {};
 let pingLatency = {};
 let pseudoLeaderTally = {};
 let pseudoLeaderCensus = {};
+let latencyMap = {};
+
+// Timers
+let leadershipPingTimer = null;
+let awaitLeaderPingTimer = null;
+let leaderlife = -3;
 
 
 // Accept init ports from CLI
@@ -70,7 +77,14 @@ const server = createServer((socket) => {
             console.log("Latency Reply Recieved");
             pingEndTime[sender] = pingEndTime[sender] === undefined ? [Date.now()] : [...pingEndTime[sender], Date.now()];
             verifyLatencyCheckComplete(participants);
+        } else if (message.startsWith(LEADER_PING)) {
+            handleLeaderPing(message);
         } else if (message.startsWith(START_LEADERSHIP_SELECTION)) {
+            // Lose leadership once receiving this message
+            clearInterval(leadershipPingTimer);
+            resetTempVariables();
+            leader = sender
+            chatStarted = false;
             participants = message.substring(message.indexOf('-') + 1).split(',');
             // Send ping to all participants
             console.log(`Checking Latency of Participants...${participants.join(',')}`);
@@ -80,11 +94,19 @@ const server = createServer((socket) => {
             const votes = message.substring(message.indexOf('-') + 1).split(',');
             tallyVotes(votes, sender);
         } else if (message.startsWith(CHAT_STARTED)) {
-            leader = message.substring(message.indexOf('-') + 1);
+            leaderlife = -3;
+            clearInterval(leadershipPingTimer);
+            clearInterval(awaitLeaderPingTimer);
+            const msg = message.split('-');
+            leader = msg[1];
             chatStarted = true;
             if (leader == myPort) {
-                audience = participants;
-                audience.filter((port) => port !== myPort);
+                audience = msg[2].split(',');
+                participants = audience;
+                audience = audience.filter((port) => port !== myPort);
+                leadershipPing();
+            } else {
+                awaitLeaderPing();
             }
             console.log(`Chat has started with leader ${leader}! Message away!`);
         } else if(message.startsWith(MESSAGE_ACK)) {
@@ -144,9 +166,27 @@ process.stdin.on('data', (text) => {
     }
 });
 
-function sendMessage(message, audience, except) {
+// Handle Functions
+function handleLeaderPing(message) {
+    const audienceList = message.substring(message.indexOf('-') + 1).split(',');
+    audience = audienceList;
+    leaderlife = -3;
+    // print(`Leader Ping Recieved: ${audienceList}`);
+}
+
+/*
+Params:
+    message: The message to send
+    audience: The list of ports to send the message to
+    except: The list of ports to not send the message to
+    senderPort: The port that the message is coming from
+*/
+function sendMessage(message, audience, except, senderPort) {
     if (except === undefined) {
         except = []
+    }
+    if (senderPort === undefined) {
+        senderPort = myPort
     }
     let sendTo = audience;
     if (chatStarted && leader !== myPort) {
@@ -156,8 +196,13 @@ function sendMessage(message, audience, except) {
     for (const address of sendTo) {
         if (except.indexOf(address) !== -1) continue;
         const client = createConnection({ port: address }, () => {
-            client.write(`${myPort}-${message}`);
+            client.write(`${senderPort}-${message}`);
             client.end();
+        });
+
+        client.on('error', (err) => {
+            audience = audience.filter((port) => port !== address);
+            console.log(`Error: ${err}`);
         });
     }
 }
@@ -181,7 +226,7 @@ function verifyLatencyCheckComplete(participants) {
     }
 
     // All participants have completed latency checks, sort list and return votes to psuedo-leader
-    const latencyMap = {}
+    
     for (const address of participants) {
         if (address !== myPort) {
             for (let i = 0; i < PING_CHECKS; i++) {
@@ -213,15 +258,55 @@ function tallyVotes(votes, sender) {
         }
     }
 
+    audience = audience.filter((port) => port !== myPort);
     console.log(pseudoLeaderTally);
 
     if (Object.keys(pseudoLeaderCensus).length === audience.length + 1) {
         // All votes have been tallied, find the elected leader
-        leader = Object.keys(pseudoLeaderTally).sort((a, b) => pseudoLeaderTally[b] - pseudoLeaderTally[a])[0];
+        pseudoLeaderCensus = {};
+        const tallyOrder = Object.keys(pseudoLeaderTally).sort((a, b) => pseudoLeaderTally[b] - pseudoLeaderTally[a]);
+        leader = tallyOrder[0];
+        participants = tallyOrder;
         console.log(`Leader has been elected: ${leader}`);
-        sendMessage(`${CHAT_STARTED}-${leader}`, audience);
-        chatStarted = true;
+        sendMessage(`${CHAT_STARTED}-${leader}-${tallyOrder.join(',')}`, tallyOrder);
     }
+}
+
+function leadershipPing() {
+    leadershipPingTimer = setInterval(() => {
+        sendMessage(`${LEADER_PING}-${participants}`, audience);
+    }
+    , 3000);
+}
+
+function awaitLeaderPing() {
+    awaitLeaderPingTimer = setInterval(() => {
+        leaderlife++;
+        if (leaderlife >= 1) {
+            if (myPort === audience[leaderlife]) {
+                console.log("Leader has died, starting leadership election");
+                const audienceWOLeader = audience.filter((port) => port !== leader);
+                const audienceWOHost = audienceWOLeader.filter((port) => port !== myPort);
+                leader = myPort;
+                sendMessage(`${START_LEADERSHIP_SELECTION}-${audienceWOLeader.join(',')}`, audienceWOHost);
+                chatStarted = false;
+                resetTempVariables();
+                participants = audienceWOLeader;
+                audience = audienceWOHost;
+                checkLatency(participants);
+                clearInterval(awaitLeaderPingTimer);
+            }
+        }
+    }, 3000);
+}
+
+function resetTempVariables() {
+    pingStartTime = {};
+    pingEndTime = {};
+    pingLatency = {};
+    pseudoLeaderTally = {};
+    pseudoLeaderCensus = {};
+    latencyMap = {};
 }
 
 function handleACK(message) {
@@ -274,7 +359,7 @@ function handleAckRequest(message, sender) {
 
 
         print(`Broadcasting ${messageText} to all servers`)
-        sendMessage(messageText, audience, [sender, leader])
+        sendMessage(messageText, audience, [sender, leader], sender)
 
         lastMessageFromSender[sender] = seqNum
     }
