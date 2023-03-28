@@ -4,6 +4,8 @@ DeMes is a decentralized messaging service with leadership selection to allow us
 
 Developed by Harin Wu, Sean Goyel, Justin Chan.
 
+![logo](docs/logo.png)
+
 ## Table of contents
 1. [Introduction](#introduction)
 2. [Problem Statement](#problem-statement)
@@ -11,6 +13,7 @@ Developed by Harin Wu, Sean Goyel, Justin Chan.
 4. [Project Details](#project-description)
 5. [Protocol](#protocol)
 6. [Stretch Goals](#stretch-goals)
+7. [Attributions](#attributions)
 
 # Introduction
 
@@ -29,7 +32,33 @@ This project provides an alternative solution that enables user-hosted chat serv
 # Development 
 
 1. Install [Node.js](https://nodejs.org/en/download/)
-2. Run `node client.js <MyPort> <PsuedoLeader>`
+2. `cd REPOSITORY_NAME`
+3. `npm install`
+4. In `package.json`, change the scripts depending on OS.
+    - Windows:
+    ```
+    "scripts": {
+    "watch:build": "webpack -w",
+    "watch:server": "nodemon dist/server.js %PORT%",
+    "dev": "set /p PORT=Enter port number: && npm-run-all --parallel watch:*",
+    "start": "set /p PORT=Enter port number: && node dist/server.js %PORT%",
+    "postinstall": "webpack"
+    },
+    ```
+    - Unix (macOS/Linux)
+    ```
+    "scripts": {
+    "watch:build": "webpack -w",
+    "watch:server": "nodemon dist/server.js $PORT",
+    "dev": "read -p 'Enter port number: ' PORT && npm-run-all --parallel watch:*",
+    "start": "read -p 'Enter port number: ' PORT && node dist/server.js $PORT",
+    postinstall": "webpack"
+    },
+    ```
+5. Run `npm run dev PORT_NUMBER` to start a client/server on PORT_NUMBER.
+
+`npm start` is used for production mode.
+
 
 ***Implementation Details***
 
@@ -111,3 +140,8 @@ This deployment is still very much a simulation, although in theory actual users
     - Recovering chats after every user goes offline
     - Persisted chats beyond chat session without centralized source of truth?
     - And other functionality commonly implemented in chat services
+
+# Attributions
+
+- This project utilized a Typescript-React-Express boilerplate adapted from [barebones-react-typescript-express](https://github.com/covalence-io/barebones-react-typescript-express).
+
