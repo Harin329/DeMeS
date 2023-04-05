@@ -70,6 +70,19 @@ const server = createServer((socket) => {
             audience.push(sender);
             console.log(`New Member Joined: ${sender}`);
             console.log(`Audience: ${audience}`);
+            if (chatStarted) {
+                audience.push(myPort);
+                const audienceWOLeader = audience;
+                const audienceWOHost = audience;
+                leader = myPort;
+                sendMessage(`${START_LEADERSHIP_SELECTION}-${audienceWOLeader.join(',')}`, audienceWOHost);
+                chatStarted = false;
+                resetTempVariables();
+                participants = audienceWOLeader;
+                audience = audienceWOHost;
+                checkLatency(participants);
+                clearInterval(awaitLeaderPingTimer);
+            }
         } else if (message === REQUEST_PING) {
             console.log("Latency Request Recieved");
             sendMessage(REPLY_PING, [sender]);
