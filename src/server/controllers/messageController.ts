@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import MessageModel from "../models/message"
-import { Message, MessageType } from '../../shared/models/message';
+import { MessageType } from '../../shared/models/message';
+import { ioSocket } from '../server';
 
 
 /**
@@ -19,24 +20,30 @@ export default class MessageController {
         }
     }
 
-    public message(req, res) {
+    public message(req: Request, _: Response) {
         // Seperate data by first -
-        const sender = req.body.message.toString().substring(0, req.body.message.toString().indexOf('-'));
-        const message = req.body.message.body.toString().substring(req.body.message.toString().indexOf('-') + 1);
+        const sender: string = req.body.message.toString().substring(0, req.body.message.toString().indexOf('-'));
+        const message: string = req.body.message.body.toString().substring(req.body.message.toString().indexOf('-') + 1);
+
         if (message === MessageType.JOIN_CHAT) {
             // Add new member to audience
             this.model.audience.push(sender);
             console.log(`New Member Joined: ${sender}`);
             console.log(`Audience: ${this.model.audience}`);
+
         } else if (message === MessageType.REQUEST_PING) {
             console.log("Latency Request Recieved");
             this.model.sendMessage(MessageType.REPLY_PING, [sender]);
+
         } else if (message === MessageType.REPLY_PING) {
             console.log("Latency Reply Recieved");
-            this.model.pingEndTime[sender] = this.model.pingEndTime[sender] === undefined ? [Date.now()] : [...this.model.pingEndTime[sender], Date.now()];
+            const endTime: number[] = this.model.pingEndTime.get(sender) === undefined ? [Date.now()] : this.model.pingEndTime.get(sender)!.concat([Date.now()]);
+            this.model.pingEndTime.set(sender, endTime);
             this.model.verifyLatencyCheckComplete(this.model.participants);
+
         } else if (message.startsWith(MessageType.LEADER_PING)) {
             this.model.handleLeaderPing(message);
+
         } else if (message.startsWith(MessageType.START_LEADERSHIP_SELECTION)) {
             // Lose leadership once receiving this message
             clearInterval(this.model.leadershipPingTimer);
@@ -47,10 +54,12 @@ export default class MessageController {
             // Send ping to all participants
             console.log(`Checking Latency of Participants...${this.model.participants.join(',')}`);
             this.model.checkLatency(this.model.participants);
+
         } else if (message.startsWith(MessageType.RETURN_VOTES)) {
             console.log("Return Votes Received");
             const votes = message.substring(message.indexOf('-') + 1).split(',');
             this.model.tallyVotes(votes, sender);
+
         } else if (message.startsWith(MessageType.CHAT_STARTED)) {
             this.model.leaderlife = -3;
             clearInterval(this.model.leadershipPingTimer);
@@ -67,8 +76,10 @@ export default class MessageController {
                 this.model.awaitLeaderPing();
             }
             console.log(`Chat has started with leader ${this.model.leader}! Message away!`);
+
         } else if(message.startsWith(MessageType.MESSAGE_ACK)) {
             this.model.handleACK(message);
+
         } else {
             let messageText = this.model.getMessageFromTextWithSequenceNum(message)
 
@@ -76,8 +87,9 @@ export default class MessageController {
                 this.model.handleAckRequest(message, sender)
             }
 
+            ioSocket.emit('message', { messageText });
+
             console.log(`Incoming Message from ${sender}: ${messageText}`);
         }
     }
-
 }

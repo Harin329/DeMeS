@@ -1,0 +1,35 @@
+@import './common.scss';
+
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	justify-content: space-between;
+	align-items: flex-start;
+
+	margin: $margin-md;
+	padding: $padding-sm;
+	background: $light;
+
+	border-radius: 20px;
+	border: 2px solid $grey-2;
+}
+
+.sidebar h3 {
+	padding-bottom: 0;
+}
+
+@media screen and (max-width: 768px) {
+	.sidebar {
+		justify-content: flex-start;
+		flex-grow: 0;
+	}
+}
+  
+@media screen and (max-width: 480px) {
+	.sidebar {
+		flex-grow: 0;
+		justify-content: flex-start;
+		min-width: 80%;
+	}
+}

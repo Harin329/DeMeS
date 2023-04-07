@@ -1,13 +1,3 @@
-/**
- * Interface of a message
- */
-export interface Message {
-    message: MessageType | string,
-    audience: Port[],
-    except: Port[],
-    senderPort: Port,
-}
-
 export type Port = string;
 
 export enum MessageType {

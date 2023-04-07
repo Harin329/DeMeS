@@ -1,11 +1,14 @@
 import * as React from 'react';
+import Sidebar from './Sidebar';
+import Chat from './Chat';
 import '../scss/hero.scss';
 
 function Hero() {
 
     return (
         <div className="hero">
-            <h1>Hero</h1>
+            <Sidebar />
+            <Chat />
         </div>
     );
 }

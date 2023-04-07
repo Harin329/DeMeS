@@ -38,21 +38,21 @@ This project provides an alternative solution that enables user-hosted chat serv
     - Windows:
     ```
     "scripts": {
-    "watch:build": "webpack -w",
-    "watch:server": "nodemon dist/server.js %PORT%",
-    "dev": "set /p PORT=Enter port number: && npm-run-all --parallel watch:*",
-    "start": "set /p PORT=Enter port number: && node dist/server.js %PORT%",
-    "postinstall": "webpack"
+        "watch:build": "webpack -w",
+        "watch:server": "nodemon dist/server.js",
+        "dev": "set /p PORT=Enter port number: && set /p LEADER=Enter pseudo leader port number: && npm-run-all --parallel watch:*",
+        "start": "set /p PORT=Enter port number: && set /p LEADER=Enter pseudo leader port number: && node dist/server.js",
+        "postinstall": "webpack"
     },
     ```
     - Unix (macOS/Linux)
     ```
     "scripts": {
-    "watch:build": "webpack -w",
-    "watch:server": "nodemon dist/server.js $PORT",
-    "dev": "read -p 'Enter port number: ' PORT && npm-run-all --parallel watch:*",
-    "start": "read -p 'Enter port number: ' PORT && node dist/server.js $PORT",
-    postinstall": "webpack"
+        "watch:build": "webpack -w",
+        "watch:server": "nodemon dist/server.js",
+        "dev": "read -p 'Enter port number: ' PORT && read -p 'Enter pseudo leader port number: ' LEADER && npm-run-all --parallel watch:*",
+        "start": "read -p 'Enter port number: ' PORT && read -p 'Enter pseudo leader port number: ' LEADER && node dist/server.js",
+        postinstall": "webpack"
     },
     ```
 5. Run `npm run dev PORT_NUMBER` to start a client/server on PORT_NUMBER.
