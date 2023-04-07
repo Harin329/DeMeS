@@ -30,6 +30,19 @@ export default class MessageController {
             this.model.audience.push(sender);
             console.log(`New Member Joined: ${sender}`);
             console.log(`Audience: ${this.model.audience}`);
+            if (this.model.chatStarted) {
+                this.model.audience.push(this.model.myPort);
+                const audienceWOLeader = this.model.audience;
+                const audienceWOHost = this.model.audience;
+                this.model.leader = this.model.myPort;
+                this.model.sendMessage(`${MessageType.START_LEADERSHIP_SELECTION}-${audienceWOLeader.join(',')}`, audienceWOHost);
+                this.model.chatStarted = false;
+                this.model.resetTempVariables();
+                this.model.participants = audienceWOLeader;
+                this.model.audience = audienceWOHost;
+                this.model.checkLatency(this.model.participants);
+                clearInterval(this.model.awaitLeaderPingTimer);
+            }
 
         } else if (message === MessageType.REQUEST_PING) {
             console.log("Latency Request Recieved");
