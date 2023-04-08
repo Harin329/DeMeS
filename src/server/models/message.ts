@@ -34,7 +34,6 @@ export default class MessageModel {
      * @constructor 
      */
     constructor() {
-        const args = process.argv.slice(2);
         this.myPort = process.env.PORT || '3000';
         this.audience = [];
         this.leader = process.env.LEADER || '3001';
@@ -71,7 +70,7 @@ export default class MessageModel {
         for (const address of sendTo) {
             if (except.indexOf(address) !== -1) continue;
             try {
-                await axios.post(`http://localhost:${address}/api/message`, `${senderPort}-${message}`, {
+                await axios.post(`http://localhost:${address}/api/serverMessage`, {message: `${senderPort}-${message}`}, {
                     headers: {
                         'Content-Type': 'application/json'
                     }
@@ -114,7 +113,7 @@ export default class MessageModel {
         }
 
         console.log(this.latencyMap)
-        const sortedLatency = Object.keys(this.latencyMap).sort((a, b) => this.latencyMap.get(a)! - this.latencyMap.get(b)!);
+        const sortedLatency = Array.from(this.latencyMap.keys()).sort((a, b) => this.latencyMap.get(a)! - this.latencyMap.get(b)!);
         console.log(sortedLatency);
         if (this.leader !== this.myPort) {
             this.sendMessage(`${MessageType.RETURN_VOTES}-${sortedLatency}`, [this.leader]);
@@ -136,10 +135,10 @@ export default class MessageModel {
         this.audience = this.audience.filter((port) => port !== this.myPort);
         console.log(this.pseudoLeaderTally);
 
-        if (Object.keys(this.pseudoLeaderCensus).length === this.audience.length + 1) {
+        if (Array.from(this.pseudoLeaderCensus.keys()).length === this.audience.length + 1) {
             // All votes have been tallied, find the elected leader
             this.pseudoLeaderCensus = new Map();
-            const tallyOrder = Object.keys(this.pseudoLeaderTally).sort((a: Port, b: Port) => this.pseudoLeaderTally.get(b)! - this.pseudoLeaderTally.get(a)!);
+            const tallyOrder = Array.from(this.pseudoLeaderTally.keys()).sort((a: Port, b: Port) => this.pseudoLeaderTally.get(b)! - this.pseudoLeaderTally.get(a)!);
             this.leader = tallyOrder[0];
             this.participants = tallyOrder;
             console.log(`Leader has been elected: ${this.leader}`);

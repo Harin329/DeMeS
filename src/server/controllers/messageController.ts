@@ -3,9 +3,8 @@ import MessageModel from "../models/message"
 import { MessageType } from '../../shared/models/message';
 import { ioSocket } from '../server';
 
-
 /**
- * Dataset Controller for handling dataset requests
+ * Message Controller for handling incoming messages
  */
 export default class MessageController {
     private model: MessageModel;
@@ -20,10 +19,66 @@ export default class MessageController {
         }
     }
 
-    public message(req: Request, _: Response) {
-        // Seperate data by first -
-        const sender: string = req.body.message.toString().substring(0, req.body.message.toString().indexOf('-'));
-        const message: string = req.body.message.body.toString().substring(req.body.message.toString().indexOf('-') + 1);
+    public isLeader(res: Response): void {
+        res.json(this.model.leader === this.model.myPort);
+    }
+
+    // Own client's message input request.
+    public clientMessage(req: Request, res: Response) {
+        const text: string = req.body.message;
+
+        if (this.model.leader === this.model.myPort) {
+            // Text Input Logic for Leader
+            if (text.toString().trim() === MessageType.CREATE_CHAT) {
+                // As psuedo-leader, send a list of participants to all other participants, they will ping and find average network delay
+                this.model.sendMessage(`${MessageType.START_LEADERSHIP_SELECTION}-${this.model.audience.join(',') + "," + this.model.myPort}`, this.model.audience);
+                this.model.participants = this.model.audience.concat([this.model.myPort]);
+                this.model.checkLatency(this.model.participants);
+            } else if (this.model.chatStarted) {
+                console.log("chat started, msg recieved");
+                this.model.sendMessage(this.model.addSequenceNumToMessage(text, this.model.messageSeqNum), this.model.audience, [this.model.leader]);
+                this.model.messageSeqNum++;
+
+                // Emit to frontend
+                const sender = this.model.myPort;
+                const messageId = `${sender}${Math.random()}`
+                const messageText: string = text;
+                ioSocket.emit('message', { sender, messageId, messageText });
+                console.log(`I sent a message: ${text}`);
+            } else {
+                console.log("Chat has not been started yet! Type CREATE_CHAT to begin chatting!")
+                res.sendStatus(400);
+                return;
+            }
+        } else {
+            // Text Input Logic for Non-Leader
+            if (this.model.messageSeqNum == this.model.waitingForMessageSeqNum) {
+                console.log("Waiting for previous message to be ACKed by leader")
+            } else {
+                this.model.waitingForMessageSeqNum = this.model.messageSeqNum;
+                this.model.sendMessage(this.model.addSequenceNumToMessage(text, this.model.messageSeqNum), [this.model.leader]);
+
+                // Emit to frontend
+                const sender = this.model.myPort;
+                const messageId = `${sender}${Math.random()}`
+                const messageText: string = text;
+                ioSocket.emit('message', { sender, messageId, messageText });
+                console.log(`I sent a message: ${text}`);
+            }
+    
+        }
+
+        // Resolve client-server request
+        res.sendStatus(200);
+    }
+
+    // Endpoint for other servers to send messages to.
+    public serverMessage(req: Request, res: Response) {
+        // Seperate data by first '-'
+        const data = req.body;
+
+        const sender: string = data.message.substring(0, data.message.toString().indexOf('-'));
+        const message: string = data.message.substring(data.message.toString().indexOf('-') + 1);
 
         if (message === MessageType.JOIN_CHAT) {
             // Add new member to audience
@@ -37,6 +92,7 @@ export default class MessageController {
                 this.model.leader = this.model.myPort;
                 this.model.sendMessage(`${MessageType.START_LEADERSHIP_SELECTION}-${audienceWOLeader.join(',')}`, audienceWOHost);
                 this.model.chatStarted = false;
+                ioSocket.emit('chatStarted', true); // emit to frontend
                 this.model.resetTempVariables();
                 this.model.participants = audienceWOLeader;
                 this.model.audience = audienceWOHost;
@@ -63,6 +119,7 @@ export default class MessageController {
             this.model.resetTempVariables();
             this.model.leader = sender
             this.model.chatStarted = false;
+            ioSocket.emit('chatStarted', false); // Emit to frontend
             this.model.participants = message.substring(message.indexOf('-') + 1).split(',');
             // Send ping to all participants
             console.log(`Checking Latency of Participants...${this.model.participants.join(',')}`);
@@ -90,19 +147,30 @@ export default class MessageController {
             }
             console.log(`Chat has started with leader ${this.model.leader}! Message away!`);
 
+            // Emit to frontend
+            ioSocket.emit('chatStarted', true);
         } else if(message.startsWith(MessageType.MESSAGE_ACK)) {
             this.model.handleACK(message);
 
         } else {
-            let messageText = this.model.getMessageFromTextWithSequenceNum(message)
+            let messageText = this.model.getMessageFromTextWithSequenceNum(message);
 
-            if (this.model.leader === this.model.myPort && sender !== this.model.leader) {
-                this.model.handleAckRequest(message, sender)
-            }
+            if (this.model.leader === this.model.myPort && sender !== this.model.leader) { 
+                // I am leader, broadcast to all
+                this.model.handleAckRequest(message, sender); // Broadcasts to audience 
+            } 
 
-            ioSocket.emit('message', { messageText });
-
+            // Emit to frontend for display
+            const messageId = `${sender}${Math.random()}`
+            ioSocket.emit('message', { sender, messageId, messageText });
             console.log(`Incoming Message from ${sender}: ${messageText}`);
         }
+
+        // Update frontend participant list
+        const participants: string[] = this.model.participants;
+        ioSocket.emit('participants', participants);
+
+        // Resolve server-server request
+        res.sendStatus(200);
     }
 }

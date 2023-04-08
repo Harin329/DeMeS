@@ -4,6 +4,7 @@ import { Server } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 
 const app = express();
+app.use(express.json());
 const server = new Server(app);
 export const ioSocket = new SocketIOServer(server);
 
