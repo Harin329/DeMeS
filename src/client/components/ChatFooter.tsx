@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { sendClientMessage } from '../api/message';
 import '../scss/chatfooter.scss';
 
-type Props = {
-    port: string;
-}
-
-function ChatFooter({port}: Props) {
+function ChatFooter() {
 
     const [message, setMessage] = useState("");
 

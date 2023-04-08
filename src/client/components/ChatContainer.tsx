@@ -74,7 +74,7 @@ function ChatContainer() {
             </div>
             <div className="chat-in-out">
                 <Chat messages={messages} lastMessageRef={lastMessageRef} port={port}/>    
-                <ChatFooter port={port}/>
+                <ChatFooter/>
             </div>
         </div>
     );
