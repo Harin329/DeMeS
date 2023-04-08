@@ -76,7 +76,7 @@ export default class MessageModel {
                     }
                 });
             } catch (err) {
-                console.error(err);
+                console.log(`Participant ${address} unresponsive, removed from chat.`);
                 audience = audience.filter((port: Port) => port !== address);
             }
         }

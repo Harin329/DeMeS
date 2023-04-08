@@ -35,7 +35,6 @@ export default class MessageController {
                 this.model.participants = this.model.audience.concat([this.model.myPort]);
                 this.model.checkLatency(this.model.participants);
             } else if (this.model.chatStarted) {
-                console.log("chat started, msg recieved");
                 this.model.sendMessage(this.model.addSequenceNumToMessage(text, this.model.messageSeqNum), this.model.audience, [this.model.leader]);
                 this.model.messageSeqNum++;
 
