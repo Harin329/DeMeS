@@ -55,7 +55,7 @@ This project provides an alternative solution that enables user-hosted chat serv
         postinstall": "webpack"
     },
     ```
-5. Run `npm run dev PORT_NUMBER` to start a client/server on PORT_NUMBER.
+5. Run `npm run dev PORT_NUMBER PSEUDO_LEADER_PORT` to start a client/server on PORT_NUMBER with the pseudo leader's port.
 
 `npm start` is used for production mode.
 
@@ -64,6 +64,7 @@ This project provides an alternative solution that enables user-hosted chat serv
 
 Since implementation details of the actual messaging functionality is not of primary concern, we propose to simplify the process by remaining at a high level of abstraction. We will use simple Express Node.js servers with bare-bone user interfaces that will act as individual participants, communicating with JSON http requests/responses whose contents (messages) follow the defined protocol. These applications can be run on a single machine on different ports, with mocked network failures, offline instances, and message dropping to enable local testing of the framework, or be deployed individually at scale on cloud providers. In addition, chats will not be persisted to disk, and all state will only be held in memory, meaning chat history is lost upon a messaging network being abandoned. This may actually be a desired feature, or perhaps be changed if QoL stretch goals are met that require storage, persistence, and/or replication.
 
+Each Frontend/Server acts as a user in the chat network. The server has a `serverMessage` endpoint exposed for other servers to message, and a `clientMessage` endpoint to process user input from the client. The server follows a basic MVC pattern, serving the react frontend statically, and routing requests the teh `messageController`'s methods. The `messageController` is responsible for again routing requests based on message type, and performing and transformations/logic needed. It then passes messages to the `messageModel`, which handles making further requests to other servers.
 
 # Project Details
 
