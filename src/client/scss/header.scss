@@ -1,0 +1,22 @@
+@import './common.scss';
+
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+
+    width: 100%;
+    background: $primary;
+    color: $light;
+}
+
+.title {
+    padding-left: $padding-lg;
+}
+
+@media screen and (max-width: 768px) {
+    .header {
+        justify-content: center;
+    }
+}

@@ -1,0 +1,49 @@
+@import './common.scss';
+
+.chat-container {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-grow: 1;
+	flex-direction: row;
+	justify-content: center;
+	align-items: flex-start;
+}
+
+.chat-container-sidebar {
+	display: flex;
+	align-self: stretch;
+	flex-grow: 1;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.chat-in-out {
+	display: flex;
+	align-self: stretch;
+	flex-grow: 4;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+}
+
+@media screen and (max-width: 768px) {
+	.chat-container {
+		height: 100%;
+		flex-direction: column;
+		justify-content: flex-start;
+		align-items: center;
+	}
+
+	.chat-container-sidebar {
+		justify-self: strech;
+		flex-grow: 1;
+	}
+
+	.chat-in-out {
+		justify-self: strech;
+		flex-grow: 6;
+		max-height: 642px;
+	}
+}

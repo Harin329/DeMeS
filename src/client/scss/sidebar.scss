@@ -1,0 +1,59 @@
+@import './common.scss';
+
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 2;
+	align-self: stretch;
+	justify-content: flex-start;
+	align-items: center;
+
+	margin: $margin-md;
+	padding: $padding-sm;
+	background: $light;
+
+	border-radius: 20px;
+	border: 2px solid $grey-2;
+}
+
+.chat-status {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding: 10px;
+}
+
+.startBtn {
+    display: flex;
+
+    border-radius: 10px;
+    background-color: $primary;
+    border: 1px solid $grey-3;
+    outline: none;
+    padding: 5px;
+    margin: 10px;
+
+    color: $light;
+    cursor: pointer;
+}
+
+.startBtn:hover {
+    background-color: $secondary;
+    color: $dark;
+}
+
+@media screen and (max-width: 768px) {
+	.sidebar {
+		justify-content: flex-start;
+		flex-grow: 0;
+	}
+}
+  
+@media screen and (max-width: 480px) {
+	.sidebar {
+		flex-grow: 0;
+		justify-content: flex-start;
+		min-width: 80%;
+	}
+}

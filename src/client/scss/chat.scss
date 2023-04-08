@@ -1,0 +1,77 @@
+@import './common.scss';
+
+.chat {
+	height: 100%;
+	position: relative;
+	display: flex;
+	flex-grow: 10;
+	align-self: stretch;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: center;
+
+	margin: $margin-md;
+	margin-bottom: 0;
+	background: $light;
+	border-radius: 20px;
+	border: 2px solid $grey-2;
+	padding: 10px;
+
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.message__container {
+	display: flex;
+	align-self: stretch;
+	flex-direction: column;
+	max-height: 690px;
+	overflow-y: auto;
+
+	background-color: #fff;
+}
+  
+.message__container > * {
+	margin-bottom: 10px;
+}
+
+.message__sender{
+	background-color: $success;
+	max-width: 300px;
+	padding: 10px;
+	border-radius: 10px;
+	margin-left: auto;
+	font-size: 15px;
+}
+
+.message__recipient {
+	background-color: $warning;
+	width: 300px;
+	padding: 10px;
+	border-radius: 10px;
+	font-size: 15px;
+}
+
+.message__chats > p {
+	font-size: 13px;
+}
+
+.sender__name {
+	text-align: right;
+}
+
+@media screen and (max-width: 768px) {
+	.message__container {
+		max-height: 530px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.message__container {
+		max-height: 530px;
+	}
+
+	.chat {
+		min-width: 80%;
+	}
+}

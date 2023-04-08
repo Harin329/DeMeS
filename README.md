@@ -4,6 +4,8 @@ DeMes is a decentralized messaging service with leadership selection to allow us
 
 Developed by Harin Wu, Sean Goyel, Justin Chan.
 
+![logo](docs/logo.png)
+
 ## Table of contents
 1. [Introduction](#introduction)
 2. [Problem Statement](#problem-statement)
@@ -11,6 +13,7 @@ Developed by Harin Wu, Sean Goyel, Justin Chan.
 4. [Project Details](#project-description)
 5. [Protocol](#protocol)
 6. [Stretch Goals](#stretch-goals)
+7. [Attributions](#attributions)
 
 # Introduction
 
@@ -29,12 +32,39 @@ This project provides an alternative solution that enables user-hosted chat serv
 # Development 
 
 1. Install [Node.js](https://nodejs.org/en/download/)
-2. Run `node client.js <MyPort> <PsuedoLeader>`
+2. `cd REPOSITORY_NAME`
+3. `npm install`
+4. In `package.json`, change the scripts depending on OS.
+    - Windows:
+    ```
+    "scripts": {
+        "watch:build": "webpack -w",
+        "watch:server": "nodemon dist/server.js",
+        "dev": "set /p PORT=Enter port number: && set /p LEADER=Enter pseudo leader port number: && npm-run-all --parallel watch:*",
+        "start": "set /p PORT=Enter port number: && set /p LEADER=Enter pseudo leader port number: && node dist/server.js",
+        "postinstall": "webpack"
+    },
+    ```
+    - Unix (macOS/Linux)
+    ```
+    "scripts": {
+        "watch:build": "webpack -w",
+        "watch:server": "nodemon dist/server.js",
+        "dev": "read -p 'Enter port number: ' PORT && read -p 'Enter pseudo leader port number: ' LEADER && npm-run-all --parallel watch:*",
+        "start": "read -p 'Enter port number: ' PORT && read -p 'Enter pseudo leader port number: ' LEADER && node dist/server.js",
+        postinstall": "webpack"
+    },
+    ```
+5. Run `npm run dev PORT_NUMBER PSEUDO_LEADER_PORT` to start a client/server on PORT_NUMBER with the pseudo leader's port.
+
+`npm start` is used for production mode.
+
 
 ***Implementation Details***
 
 Since implementation details of the actual messaging functionality is not of primary concern, we propose to simplify the process by remaining at a high level of abstraction. We will use simple Express Node.js servers with bare-bone user interfaces that will act as individual participants, communicating with JSON http requests/responses whose contents (messages) follow the defined protocol. These applications can be run on a single machine on different ports, with mocked network failures, offline instances, and message dropping to enable local testing of the framework, or be deployed individually at scale on cloud providers. In addition, chats will not be persisted to disk, and all state will only be held in memory, meaning chat history is lost upon a messaging network being abandoned. This may actually be a desired feature, or perhaps be changed if QoL stretch goals are met that require storage, persistence, and/or replication.
 
+Each Frontend/Server acts as a user in the chat network. The server has a `serverMessage` endpoint exposed for other servers to message, and a `clientMessage` endpoint to process user input from the client. The server follows a basic MVC pattern, serving the react frontend statically, and routing requests the teh `messageController`'s methods. The `messageController` is responsible for again routing requests based on message type, and performing and transformations/logic needed. It then passes messages to the `messageModel`, which handles making further requests to other servers.
 
 # Project Details
 
@@ -111,3 +141,8 @@ This deployment is still very much a simulation, although in theory actual users
     - Recovering chats after every user goes offline
     - Persisted chats beyond chat session without centralized source of truth?
     - And other functionality commonly implemented in chat services
+
+# Attributions
+
+- This project utilized a Typescript-React-Express boilerplate adapted from [barebones-react-typescript-express](https://github.com/covalence-io/barebones-react-typescript-express).
+
