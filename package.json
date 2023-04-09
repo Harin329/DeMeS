@@ -9,7 +9,7 @@
         "dev": "set /p PORT=Enter port number: && set /p LEADER=Enter pseudo leader port number: && npm-run-all --parallel watch:*",
         "start": "set /p PORT=Enter port number: && set /p LEADER=Enter pseudo leader port number: && node dist/server.js",
         "postinstall": "webpack",
-        "test": "webpack && jest --coverage",
+        "test": "webpack && jest --coverage --forceExit",
         "test:watch": "webpack && jest --watch"
     },
     "keywords": [],
