@@ -6,3 +6,6 @@ node_modules/
 # production bundles
 dist/
 public/js/*
+
+# test
+coverage/

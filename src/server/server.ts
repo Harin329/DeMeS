@@ -14,3 +14,5 @@ app.use(apiRouter);
 const port = process.env.PORT || 3000;
 const env = process.env.NODE_ENV || 'development';
 server.listen(port, () => console.log(`Http (express) server listening on port ${port}, env: ${env}`));
+
+export default app; // For integration testing
