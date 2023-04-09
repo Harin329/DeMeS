@@ -7,7 +7,7 @@ import { ioSocket } from '../server';
  * Message Controller for handling incoming messages
  */
 export default class MessageController {
-    private model: MessageModel;
+    public model: MessageModel;
 
     constructor(model: MessageModel) {
         this.model = model;
