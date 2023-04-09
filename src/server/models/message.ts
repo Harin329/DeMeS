@@ -62,7 +62,7 @@ export default class MessageModel {
         if (senderPort === undefined) {
             senderPort = this.myPort;
         }
-        let sendTo = audience;
+        let sendTo = [...audience];
         if (this.chatStarted && this.leader !== this.myPort) {
             sendTo = [this.leader];
         }
@@ -77,7 +77,7 @@ export default class MessageModel {
                 });
             } catch (err) {
                 console.log(`Participant ${address} unresponsive, removed from chat.`);
-                audience = audience.filter((port: Port) => port !== address);
+                audience.splice(0, audience.length,...audience.filter((port: Port) => port !== address));
             }
         }
     }
