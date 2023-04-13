@@ -117,5 +117,3 @@ Closeness centrality of a client i is defined as:
         - If a network partition occurs where the host and a minority of users are disconnected from a majority of users, the majority will perform leadership selection within itself and elect a new host.
             - The original host keeps track of responding clients. If it goes below the majority of users, the host is in a potentially invalidated state. If it receives a heartbeat from now on, it knows that a majority has elected a new host and it is no longer the host. 
             - *This process will be formalized further in the protocol documentation
-
-## Formal Messaging Protocol
