@@ -42,7 +42,9 @@ This project provides an alternative solution that enables user-hosted chat serv
         "watch:server": "nodemon dist/server.js",
         "dev": "set /p PORT=Enter port number: && set /p LEADER=Enter pseudo leader port number: && npm-run-all --parallel watch:*",
         "start": "set /p PORT=Enter port number: && set /p LEADER=Enter pseudo leader port number: && node dist/server.js",
-        "postinstall": "webpack"
+        "postinstall": "webpack",
+        "test": "webpack && jest --coverage --forceExit",
+        "test:watch": "webpack && jest --watch"
     },
     ```
     - Unix (macOS/Linux)
@@ -52,7 +54,9 @@ This project provides an alternative solution that enables user-hosted chat serv
         "watch:server": "nodemon dist/server.js",
         "dev": "read -p 'Enter port number: ' PORTI && export PORT=$PORTI && read -p 'Enter pseudo leader port number: ' LEADERI && export LEADER=$LEADERI && npm-run-all --parallel watch:*",
         "start": "read -p 'Enter port number: ' PORTI && export PORT=$PORTI && read -p 'Enter pseudo leader port number: ' LEADERI && export LEADER=$LEADERI && node dist/server.js",
-        "postinstall": "webpack"
+        "postinstall": "webpack",
+        "test": "webpack && jest --coverage --forceExit",
+        "test:watch": "webpack && jest --watch"
     },
     ```
 5. Run `npm run dev` to start a client/server. The CLI will prompt you for a `PORT` and `PSEUDO LEADER PORT`. `PORT` is the port this instance will be running on, and `PSEUDO LEADER PORT` is the port of the pseudo leader when a chat hasn't started yet.
